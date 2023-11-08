@@ -1,6 +1,9 @@
 shader_type spatial;
 render_mode unshaded;
 
+
+//pixeklation
+uniform int pixel_size = 4;
 // Inspired by https://threejs.org/examples/webgl_postprocessing_pixel.html
 
 uniform sampler2D DEPTH_TEXTURE : hint_depth_texture, filter_linear_mipmap;
@@ -40,6 +43,14 @@ float normalIndicator(vec3 normalEdgeBias, vec3 baseNormal, vec3 newNormal, floa
 }
 
 void vertex(){
+	float nw = (1.0*float(pixel_size));
+	if (NORMAL.x == 1.0 || NORMAL.y == 1.0 || NORMAL.z == 1.0 || NORMAL.x == -1.0 || NORMAL.y == -1.0 || NORMAL.z == -1.0)
+	{
+		VERTEX *= 1.0+0.01*nw;
+	}
+	if ((NORMAL.x != 1.0 && NORMAL.y != 0.0 && NORMAL.z != 0.0) && (NORMAL.y != 1.0 && NORMAL.x != 0.0 && NORMAL.z != 0.0) && (NORMAL.z != 1.0 && NORMAL.x != 0.0 && NORMAL.y != 0.0) && (NORMAL.x != -1.0 && NORMAL.y != 0.0 && NORMAL.z != 0.0) && (NORMAL.y != -1.0 && NORMAL.x != 0.0 && NORMAL.z != 0.0) && (NORMAL.z != -1.0 && NORMAL.x != 0.0 && NORMAL.y != 0.0)){
+		VERTEX += NORMAL*0.01*nw;
+	}
     model_view_matrix = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
 }
 
@@ -66,7 +77,7 @@ void fragment() {
 		neg_depth_diff = clamp(neg_depth_diff, 0., 1.);
 		neg_depth_diff = clamp(smoothstep(0.5, 0.5, neg_depth_diff)*10., 0., 1.);
 		depth_diff = smoothstep(0.2, 0.3, depth_diff);
-//		ALBEDO = vec3(neg_depth_diff);
+	//ALBEDO = vec3(neg_depth_diff);
 	}
 	
 //	Highlights
@@ -84,7 +95,7 @@ void fragment() {
 		normal_diff += normalIndicator(normal_edge_bias, normal, nl, depth_diff);
 		normal_diff = smoothstep(0.2, 0.8, normal_diff);
 		normal_diff = clamp(normal_diff-neg_depth_diff, 0., 1.);
-//		ALBEDO = vec3(normal_diff);
+	//	ALBEDO = vec3(normal_diff);
 	}
 	
 
@@ -102,4 +113,16 @@ void fragment() {
 
 	float alpha_mask = depth_diff * float(shadows_enabled) + normal_diff * float(highlights_enabled);
 	ALPHA = clamp((alpha_mask) * 5., 0., 1.);
+	
+	//pixelations
+	float x = float(int(FRAGCOORD.x) % pixel_size);
+	float y = float(int(FRAGCOORD.y) % pixel_size);
+	x = FRAGCOORD.x + floor(float(pixel_size) / 2.0) - x;
+	y = FRAGCOORD.y + floor(float(pixel_size) / 2.0) - y;
+	vec4 oldtext = texture(SCREEN_TEXTURE,SCREEN_UV*1.0);
+	vec4 pixelatedtext = texture(SCREEN_TEXTURE, vec2(x, y) / (VIEWPORT_SIZE));
+	if (pixelatedtext.a==0.0 && oldtext.a==0.0){
+		discard;
+	}
+	ALBEDO = pixelatedtext.rgb;
 }

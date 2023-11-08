@@ -1,3 +1,18 @@
-[gd_scene format=3 uid="uid://ccsqmm45d0jdx"]
+[gd_scene load_steps=4 format=3 uid="uid://ccsqmm45d0jdx"]
+
+[ext_resource type="PackedScene" uid="uid://bbon08ko72qrf" path="res://grass.glb" id="1_prek6"]
+[ext_resource type="Shader" path="res://node_3d.gdshader" id="2_2pt35"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_k683g"]
+render_priority = 0
+shader = ExtResource("2_2pt35")
+shader_parameter/pixel_size = 4
 
 [node name="Node3D" type="Node3D"]
+
+[node name="grass" parent="." instance=ExtResource("1_prek6")]
+
+[node name="Plane_001" parent="grass" index="0"]
+material_override = SubResource("ShaderMaterial_k683g")
+
+[editable path="grass"]
